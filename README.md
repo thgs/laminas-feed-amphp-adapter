@@ -9,7 +9,7 @@ There is a convenience static method provided to create and install the adapter
 
 ```php
 <?php
-use \thgs\Adapter\LaminasFeedHttpClient\LaminasFeedAmphpHttpClientAdapter;
+use thgs\Adapter\LaminasFeedHttpClient\LaminasFeedAmphpHttpClientAdapter;
 
 LaminasFeedAmphpHttpClientAdapter::installNew($httpClient = null);
 ```
@@ -21,7 +21,7 @@ If you prefer to manually install into `Laminas Feed` you may use the constructo
 
 ```php
 <?php
-use \thgs\Adapter\LaminasFeedHttpClient\LaminasFeedAmphpHttpClientAdapter;
+use thgs\Adapter\LaminasFeedHttpClient\LaminasFeedAmphpHttpClientAdapter;
 
 $adapter = new LaminasFeedAmphpHttpClientAdapter($httpClient = null);
 \Laminas\Feed\Reader\Reader::setHttpClient($adapter);
