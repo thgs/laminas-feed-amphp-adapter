@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace thgs\Adapter\LaminasFeedHttpClient\Tests;
 
@@ -21,11 +21,16 @@ class LaminasFeedAmphpHttpClientAdapterTest extends TestCase
         $adapterInstalled = LaminasFeedAmphpHttpClientAdapter::installNew();
 
         $this->assertSame(Reader::getHttpClient(), $adapterInstalled);
+
+        $adapter = new LaminasFeedAmphpHttpClientAdapter();
+        $adapter->install();
+
+        $this->assertSame(Reader::getHttpClient(), $adapter);
     }
 
     public function testCanAcceptClient(): void
     {
-        $testBody = "passed" . uniqid();
+        $testBody = "passed" . \uniqid();
         $httpClient = $this->getHttpClient($testBody, []);
         $subject = new LaminasFeedAmphpHttpClientAdapter($httpClient);
         $response = $subject->get('http://asdfghjklqyweiuqw');
@@ -39,6 +44,41 @@ class LaminasFeedAmphpHttpClientAdapterTest extends TestCase
         $httpClient = $this->getHttpClient();
         $subject = new LaminasFeedAmphpHttpClientAdapter($httpClient);
         $this->assertEquals($httpClient, $subject->getClient());
+    }
+
+    public function testCanSetHeaders(): void
+    {
+        $url = 'http://fjdkls';
+        $headers = ['testing' => ['test-string']];
+
+        $fakeClient = new class() implements DelegateHttpClient {
+            /** @var string[][] */
+            private array $requestHeaders = [];
+
+            public function request(Request $request, Cancellation $cancellation): Response
+            {
+                $this->requestHeaders = $request->getHeaders();
+
+                return new Response(
+                    protocolVersion: '1.1',
+                    status: 200,
+                    reason: 'reason',
+                    headers: $this->requestHeaders,
+                    body: null,
+                    request: $request
+                );
+            }
+
+            public function getRequestHeaders(): array
+            {
+                return $this->requestHeaders;
+            }
+        };
+
+        $subject = new LaminasFeedAmphpHttpClientAdapter($fakeClient);
+        $subject->get($url, $headers);
+
+        $this->assertSame($headers, $fakeClient->getRequestHeaders());
     }
 
     /**
@@ -62,12 +102,12 @@ class LaminasFeedAmphpHttpClientAdapterTest extends TestCase
 
     public function provideHeaders(): \Generator
     {
-       yield 'single value' => [
-            'Custom-Header',
-            'Custom-Header',
-            ['1'],
-            '1'
-        ];
+        yield 'single value' => [
+             'Custom-Header',
+             'Custom-Header',
+             ['1'],
+             '1'
+         ];
 
         yield 'multi value' => [
             'Custom-Header',
@@ -88,9 +128,7 @@ class LaminasFeedAmphpHttpClientAdapterTest extends TestCase
     }
 
     /**
-     * @param string|null $responseBody
      * @param array<non-empty-string, list<string>> $responseHeaders
-     * @return HttpClient
      */
     private function getHttpClient(?string $responseBody = null, array $responseHeaders = []): HttpClient
     {
@@ -100,14 +138,11 @@ class LaminasFeedAmphpHttpClientAdapterTest extends TestCase
     }
 
     /**
-     * @param string|null $body
      * @param array<non-empty-string, list<string>> $headers
-     * @return ApplicationInterceptor
      */
     private function getInterceptor(?string $body, array $headers = []): ApplicationInterceptor
     {
-        return new class($body, $headers) implements ApplicationInterceptor
-        {
+        return new class($body, $headers) implements ApplicationInterceptor {
             public function __construct(
                 private ?string $body,
                 /** @var array<non-empty-string, list<string>> */
