@@ -2,10 +2,12 @@
 
 namespace thgs\Adapter\LaminasFeedHttpClient;
 
+use Amp\Http\Client\DelegateHttpClient;
 use Amp\Http\Client\HttpClient;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
 use Amp\Http\HttpMessage;
+use Amp\NullCancellation;
 use Laminas\Feed\Reader\Http\HeaderAwareClientInterface;
 use Laminas\Feed\Reader\Http\Response as LaminasFeedHttpResponse;
 use Laminas\Feed\Reader\Reader;
@@ -15,9 +17,9 @@ use Laminas\Feed\Reader\Reader;
  */
 final class LaminasFeedAmphpHttpClientAdapter implements HeaderAwareClientInterface
 {
-    private HttpClient $client;
+    private DelegateHttpClient $client;
 
-    public function __construct(?HttpClient $client = null)
+    public function __construct(?DelegateHttpClient $client = null)
     {
         $this->client = $client ?? (new HttpClientBuilder())->build();
     }
@@ -27,7 +29,7 @@ final class LaminasFeedAmphpHttpClientAdapter implements HeaderAwareClientInterf
         return (new self($client))->install();
     }
 
-    public function getClient(): HttpClient
+    public function getClient(): DelegateHttpClient
     {
         return $this->client;
     }
@@ -42,7 +44,7 @@ final class LaminasFeedAmphpHttpClientAdapter implements HeaderAwareClientInterf
         $amphpRequest = new Request($uri);
         $amphpRequest->setHeaders($headers);
 
-        $response = $this->client->request($amphpRequest);
+        $response = $this->client->request($amphpRequest, new NullCancellation());
 
         $responseHeaders = [];
         foreach ($response->getHeaders() as $name => $value) {
