@@ -3,7 +3,6 @@
 namespace thgs\Adapter\LaminasFeedHttpClient;
 
 use Amp\Http\Client\DelegateHttpClient;
-use Amp\Http\Client\HttpClient;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
 use Amp\Http\HttpMessage;
@@ -19,14 +18,18 @@ final class LaminasFeedAmphpHttpClientAdapter implements HeaderAwareClientInterf
 {
     private DelegateHttpClient $client;
 
-    public function __construct(?DelegateHttpClient $client = null)
-    {
+    public function __construct(
+        ?DelegateHttpClient $client = null,
+        private ?CancellationFactoryInterface $cancellationFactory = null
+    ) {
         $this->client = $client ?? (new HttpClientBuilder())->build();
     }
 
-    public static function installNew(?HttpClient $client = null): self
-    {
-        return (new self($client))->install();
+    public static function installNew(
+        ?DelegateHttpClient $client = null,
+        ?CancellationFactoryInterface $cancellationFactory = null
+    ): self {
+        return (new self($client, $cancellationFactory))->install();
     }
 
     public function getClient(): DelegateHttpClient
@@ -44,7 +47,10 @@ final class LaminasFeedAmphpHttpClientAdapter implements HeaderAwareClientInterf
         $amphpRequest = new Request($uri);
         $amphpRequest->setHeaders($headers);
 
-        $response = $this->client->request($amphpRequest, new NullCancellation());
+        $response = $this->client->request(
+            $amphpRequest,
+            $this->cancellationFactory?->createCancellation($uri, $headers) ?? new NullCancellation()
+        );
 
         $responseHeaders = [];
         foreach ($response->getHeaders() as $name => $value) {
